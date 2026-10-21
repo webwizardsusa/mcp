@@ -4,7 +4,7 @@ import { loginBg } from '@/shared/assets';
 import AuthLogin from '@/features/auth/components/AuthLogin';
 
 const Login = () => (
-  <PageContainer title="Login" description="AI Document Chat login">
+  <PageContainer title="Login" description="AI Product Advisor login">
     <Grid
       container
       spacing={0}
@@ -42,6 +42,14 @@ const Login = () => (
             display: 'block',
           }}
         />
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            background:
+              'linear-gradient(135deg, rgba(16, 24, 40, 0.45) 0%, rgba(34, 197, 94, 0.25) 100%)',
+          }}
+        />
       </Grid>
       <Grid
         size={{
@@ -59,10 +67,10 @@ const Login = () => (
       >
         <Box sx={{ p: 4, width: '100%', maxWidth: 420 }}>
           <AuthLogin
-            title="Welcome to AI Document Chat"
+            title="Welcome to AI Product Advisor"
             subtext={
               <Typography variant="subtitle1" color="textSecondary" sx={{ mb: 1 }}>
-                Sign in to ask questions across your documents
+                Sign in to get smart spare-parts recommendations
               </Typography>
             }
           />

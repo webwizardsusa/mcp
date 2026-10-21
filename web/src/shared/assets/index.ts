@@ -1,1 +1,1 @@
-export { default as loginBg } from './images/backgrounds/login-bg.png';
+export { default as loginBg } from './images/backgrounds/login-bg.jpg';
