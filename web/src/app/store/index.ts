@@ -6,6 +6,7 @@ import { initAuthSync } from '@/features/auth/authSync';
 import { authListenerMiddleware } from '@/features/auth/listeners/authListener';
 import authReducer from '@/features/auth/slices/authSlice';
 import '@/features/auth/api/authApi';
+import '@/features/product/api/productApi';
 
 export const store = configureStore({
   reducer: {

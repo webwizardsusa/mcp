@@ -13,7 +13,7 @@ const initials = (name?: string | null) => {
     .join('');
 };
 
-export const useDashboardUserMenu = () => {
+export const useProductUserMenu = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const user = useAppSelector(selectAuthUser);

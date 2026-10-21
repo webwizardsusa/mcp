@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from core.config import settings
 from core.exceptions import register_exception_handlers
 from core.logging import RequestIdMiddleware
-from modules import auth
+from modules import auth, product
 
 logging.basicConfig(
     level=logging.INFO,
@@ -14,7 +14,7 @@ logging.basicConfig(
 )
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 
-app = FastAPI(title="AI Document Chat")
+app = FastAPI(title="AI Product Advisor")
 
 register_exception_handlers(app)
 
@@ -30,5 +30,6 @@ app.add_middleware(
 
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(auth.router)
+api_router.include_router(product.router)
 
 app.include_router(api_router)

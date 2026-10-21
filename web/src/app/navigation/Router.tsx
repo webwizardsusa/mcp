@@ -8,10 +8,12 @@ const lazyPage = (loader: () => Promise<{ default: ComponentType }>) => Loadable
 const BlankLayout = lazyPage(() => import('@/app/layouts/blank/BlankLayout'));
 const Login = lazyPage(() => import('@/features/auth/pages/Login'));
 const Error = lazyPage(() => import('@/features/auth/pages/Error'));
-const DashboardShell = lazyPage(
-  () => import('@/features/dashboard/components/DashboardShell'),
+const ProductShell = lazyPage(
+  () => import('@/features/product/components/ProductShell'),
 );
-const DashboardPage = lazyPage(() => import('@/features/dashboard/pages/DashboardPage'));
+const ProductListPage = lazyPage(
+  () => import('@/features/product/pages/ProductListPage'),
+);
 
 const routes = [
   {
@@ -21,9 +23,9 @@ const routes = [
         element: <BlankLayout />,
         children: [
           {
-            element: <DashboardShell />,
+            element: <ProductShell />,
             children: [
-              { path: '/', element: <DashboardPage /> },
+              { path: '/', element: <ProductListPage /> },
               { path: '*', element: <Navigate to="/" replace /> },
             ],
           },

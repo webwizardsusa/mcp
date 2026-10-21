@@ -15,6 +15,7 @@ import type { LoginResponse } from '@/features/auth/types/auth';
 
 export const API_TAGS = {
   Auth: 'Auth',
+  Product: 'Product',
 } as const;
 
 type ApiEnvelope<T = unknown> = {

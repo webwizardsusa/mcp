@@ -1,10 +1,10 @@
 import { Box } from '@mui/material';
 import { Outlet } from 'react-router';
-import DashboardHeader from './DashboardHeader';
+import ProductHeader from './ProductHeader';
 
-const DashboardShell = () => (
+const ProductShell = () => (
   <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: 'grey.100' }}>
-    <DashboardHeader title="AI" />
+    <ProductHeader />
     <Box
       component="main"
       sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}
@@ -14,4 +14,4 @@ const DashboardShell = () => (
   </Box>
 );
 
-export default DashboardShell;
+export default ProductShell;
