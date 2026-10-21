@@ -1,17 +1,24 @@
 """
 Seed 100 automotive products with one real image each.
 
-Images are fetched from Wikimedia Commons (real spare-part photos),
-saved into web/public/products/, and stored as /products/NNN.jpg.
+Images are saved under web/public/products/ locally (or PRODUCT_IMAGE_DIR).
+In Docker (API-only container), use --skip-images so DB rows point at
+/products/NNN.jpg already baked into the web image.
 
 Usage (from api/):
   python -m seeders.seed_products
   python -m seeders.seed_products --force
+  python -m seeders.seed_products --force --skip-images
+
+Docker:
+  docker compose exec -e APP_ENV=local -e ALLOW_PRODUCT_SEED=1 api \\
+    python -m seeders.seed_products --force --skip-images
 """
 
 from __future__ import annotations
 
 import json
+import os
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -26,7 +33,6 @@ from models.product import Product
 from seeders.product_catalog import CATEGORIES, build_catalog
 
 PRODUCT_COUNT = 100
-IMAGE_DIR = Path(__file__).resolve().parents[2] / "web" / "public" / "products"
 IMAGE_URL_PREFIX = "/products"
 
 # Wikimedia search terms per category (real automotive part photos).
@@ -54,6 +60,33 @@ _FALLBACK_SEARCHES = [
     "automobile component",
     "vehicle maintenance part",
 ]
+
+
+def _resolve_image_dir() -> Path | None:
+    """Return a writable image directory, or None if downloads should be skipped."""
+    env_dir = os.getenv("PRODUCT_IMAGE_DIR", "").strip()
+    if env_dir:
+        return Path(env_dir)
+
+    # Local monorepo: api/seeders -> api -> repo root -> web/public/products
+    repo_web = Path(__file__).resolve().parents[2] / "web" / "public" / "products"
+    if (Path(__file__).resolve().parents[2] / "web").is_dir():
+        return repo_web
+
+    # Docker API image has no sibling web/ folder.
+    return None
+
+
+def _ensure_writable_dir(path: Path) -> bool:
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+        probe = path / ".write_test"
+        probe.write_text("ok", encoding="utf-8")
+        probe.unlink(missing_ok=True)
+        return True
+    except OSError as exc:
+        print(f"  warn: cannot write images to {path}: {exc}")
+        return False
 
 
 def _http_get_json(url: str) -> dict:
@@ -99,7 +132,6 @@ def _commons_image_urls(search: str, limit: int = 40) -> list[str]:
             continue
         thumb = info.get("thumburl") or info.get("url")
         if thumb and thumb not in urls:
-            # Strip tracking query params
             urls.append(thumb.split("?")[0])
     return urls
 
@@ -109,9 +141,7 @@ def _collect_image_pool(needed: int) -> list[str]:
     pool: list[str] = []
     seen: set[str] = set()
 
-    category_terms = [
-        _CATEGORY_SEARCHES.get(cat[0], cat[0]) for cat in CATEGORIES
-    ]
+    category_terms = [_CATEGORY_SEARCHES.get(cat[0], cat[0]) for cat in CATEGORIES]
     all_terms = category_terms + _FALLBACK_SEARCHES
 
     for term in all_terms:
@@ -143,39 +173,67 @@ def _download_image(source_url: str, dest: Path) -> None:
     dest.write_bytes(data)
 
 
-def seed_products(*, force: bool = False) -> None:
-    if settings.APP_ENV != "local":
-        raise SystemExit("Refusing to seed products when APP_ENV is not local")
+def _assert_seed_allowed() -> None:
+    allow = os.getenv("ALLOW_PRODUCT_SEED", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+    if settings.APP_ENV == "local" or allow:
+        return
+    raise SystemExit(
+        "Refusing to seed products when APP_ENV is not local. "
+        "Re-run with APP_ENV=local or ALLOW_PRODUCT_SEED=1 "
+        "(and preferably --skip-images in Docker)."
+    )
 
-    IMAGE_DIR.mkdir(parents=True, exist_ok=True)
+
+def seed_products(*, force: bool = False, skip_images: bool = False) -> None:
+    _assert_seed_allowed()
+
     catalog = build_catalog(PRODUCT_COUNT)
+    image_dir = _resolve_image_dir()
+    download_images = not skip_images
 
-    print(f"Collecting {PRODUCT_COUNT} real product images from Wikimedia Commons...")
-    image_pool = _collect_image_pool(PRODUCT_COUNT)
-    print(f"  found {len(image_pool)} unique images")
+    if download_images:
+        if image_dir is None:
+            print(
+                "No writable web/public/products path in this environment "
+                "(typical for Docker API). Skipping image download; "
+                "using /products/NNN.jpg URLs (ensure images exist in the web image)."
+            )
+            download_images = False
+        elif not _ensure_writable_dir(image_dir):
+            print("Skipping image download; seeding DB URLs only.")
+            download_images = False
 
-    print(f"Downloading into {IMAGE_DIR} ...")
-    for index, item in enumerate(catalog):
-        dest = IMAGE_DIR / item["image_filename"]
-        source = image_pool[index]
-        try:
-            _download_image(source, dest)
-            print(f"  ✓ {item['image_filename']} — {item['name']}")
-        except Exception as exc:
-            # Retry with next available URL if one fails
-            recovered = False
-            for alt in image_pool[index + 1 :]:
-                try:
-                    _download_image(alt, dest)
-                    print(f"  ✓ {item['image_filename']} — {item['name']} (alt)")
-                    recovered = True
-                    break
-                except Exception:
-                    continue
-            if not recovered:
-                raise RuntimeError(
-                    f"Failed to download image for {item['name']}: {exc}"
-                ) from exc
+    if download_images and image_dir is not None:
+        print(f"Collecting {PRODUCT_COUNT} real product images from Wikimedia Commons...")
+        image_pool = _collect_image_pool(PRODUCT_COUNT)
+        print(f"  found {len(image_pool)} unique images")
+        print(f"Downloading into {image_dir} ...")
+        for index, item in enumerate(catalog):
+            dest = image_dir / item["image_filename"]
+            source = image_pool[index]
+            try:
+                _download_image(source, dest)
+                print(f"  ✓ {item['image_filename']} — {item['name']}")
+            except Exception as exc:
+                recovered = False
+                for alt in image_pool[index + 1 :]:
+                    try:
+                        _download_image(alt, dest)
+                        print(f"  ✓ {item['image_filename']} — {item['name']} (alt)")
+                        recovered = True
+                        break
+                    except Exception:
+                        continue
+                if not recovered:
+                    raise RuntimeError(
+                        f"Failed to download image for {item['name']}: {exc}"
+                    ) from exc
+    else:
+        print("Skipping image download (--skip-images or no writable image dir).")
 
     db = SessionLocal()
     try:
@@ -225,4 +283,5 @@ if __name__ == "__main__":
     import sys
 
     force = "--force" in sys.argv
-    seed_products(force=force)
+    skip_images = "--skip-images" in sys.argv
+    seed_products(force=force, skip_images=skip_images)
