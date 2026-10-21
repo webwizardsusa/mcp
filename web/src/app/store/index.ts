@@ -7,6 +7,7 @@ import { authListenerMiddleware } from '@/features/auth/listeners/authListener';
 import authReducer from '@/features/auth/slices/authSlice';
 import '@/features/auth/api/authApi';
 import '@/features/product/api/productApi';
+import '@/features/chat/api/chatApi';
 
 export const store = configureStore({
   reducer: {

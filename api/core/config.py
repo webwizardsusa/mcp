@@ -32,6 +32,14 @@ class Settings(BaseSettings):
     REFRESH_COOKIE_SECURE: bool = False
     REFRESH_COOKIE_SAMESITE: Literal["lax", "strict", "none"] = "lax"
 
+    OPENAI_API_KEY: SecretStr | None = None
+    CHAT_MODEL: str = "gpt-4o-mini"
+
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_CHAT_PER_MINUTE: int = 20
+    # Optional. When set, chat limits use Redis; otherwise in-memory per process.
+    RATE_LIMIT_REDIS_URL: str | None = None
+
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=True,
@@ -42,9 +50,15 @@ class Settings(BaseSettings):
     def jwt_secret(self) -> str:
         return self.JWT_SECRET_KEY.get_secret_value()
 
+    @property
+    def openai_api_key(self) -> str | None:
+        if self.OPENAI_API_KEY is None:
+            return None
+        value = self.OPENAI_API_KEY.get_secret_value().strip()
+        return value or None
+
     @model_validator(mode="after")
     def validate_security_settings(self) -> "Settings":
-        # Browsers require Secure when SameSite=None.
         if self.REFRESH_COOKIE_SAMESITE == "none" and not self.REFRESH_COOKIE_SECURE:
             raise ValueError(
                 "REFRESH_COOKIE_SAMESITE=none requires REFRESH_COOKIE_SECURE=true"

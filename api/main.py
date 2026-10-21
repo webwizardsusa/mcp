@@ -6,7 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from core.config import settings
 from core.exceptions import register_exception_handlers
 from core.logging import RequestIdMiddleware
-from modules import auth, product
+from core.responses import success
+from modules import auth, chat, product
 
 logging.basicConfig(
     level=logging.INFO,
@@ -31,5 +32,11 @@ app.add_middleware(
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(auth.router)
 api_router.include_router(product.router)
+api_router.include_router(chat.router)
 
 app.include_router(api_router)
+
+
+@app.get("/health")
+def health():
+    return success(message="ok", result={"service": "ai-product-advisor"})

@@ -1,5 +1,6 @@
 import { Box } from '@mui/material';
 import { Outlet } from 'react-router';
+import ProductChatWidget from '@/features/chat/components/ProductChatWidget';
 import ProductHeader from './ProductHeader';
 
 const ProductShell = () => (
@@ -11,6 +12,7 @@ const ProductShell = () => (
     >
       <Outlet />
     </Box>
+    <ProductChatWidget />
   </Box>
 );
 
