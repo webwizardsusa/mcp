@@ -1,6 +1,7 @@
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { WavingHand as WaveIcon } from '@mui/icons-material';
 import type { ChatMessage } from '@/features/chat/types/chat';
+import ChatMarkdown from './ChatMarkdown';
 
 type Props = {
   messages: ChatMessage[];
@@ -49,7 +50,7 @@ const ChatMessageList = ({ messages, isLoading = false }: Props) => (
                   {message.text}
                 </Typography>
               </Box>
-            ) : (
+            ) : isUser ? (
               <Typography
                 variant="body2"
                 sx={{
@@ -60,6 +61,8 @@ const ChatMessageList = ({ messages, isLoading = false }: Props) => (
               >
                 {message.text}
               </Typography>
+            ) : (
+              <ChatMarkdown text={message.text} />
             )}
           </Box>
         </Box>

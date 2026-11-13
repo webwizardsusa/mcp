@@ -1,4 +1,5 @@
 # syntax=docker/dockerfile:1.7
+# Python 3.12 — required for current google-genai support.
 
 FROM python:3.12-slim-bookworm AS builder
 

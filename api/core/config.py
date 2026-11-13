@@ -32,8 +32,11 @@ class Settings(BaseSettings):
     REFRESH_COOKIE_SECURE: bool = False
     REFRESH_COOKIE_SAMESITE: Literal["lax", "strict", "none"] = "lax"
 
+    AI_PROVIDER: Literal["openai", "gemini"] = "openai"
     OPENAI_API_KEY: SecretStr | None = None
-    CHAT_MODEL: str = "gpt-4o-mini"
+    GEMINI_API_KEY: SecretStr | None = None
+    OPENAI_CHAT_MODEL: str = "gpt-4o-mini"
+    GEMINI_CHAT_MODEL: str = "gemini-flash-lite-latest"
 
     RATE_LIMIT_ENABLED: bool = True
     RATE_LIMIT_CHAT_PER_MINUTE: int = 20
@@ -57,6 +60,19 @@ class Settings(BaseSettings):
         value = self.OPENAI_API_KEY.get_secret_value().strip()
         return value or None
 
+    @property
+    def gemini_api_key(self) -> str | None:
+        if self.GEMINI_API_KEY is None:
+            return None
+        value = self.GEMINI_API_KEY.get_secret_value().strip()
+        return value or None
+
+    @property
+    def chat_model(self) -> str:
+        if self.AI_PROVIDER == "gemini":
+            return self.GEMINI_CHAT_MODEL
+        return self.OPENAI_CHAT_MODEL
+
     @model_validator(mode="after")
     def validate_security_settings(self) -> "Settings":
         if self.REFRESH_COOKIE_SAMESITE == "none" and not self.REFRESH_COOKIE_SECURE:
@@ -68,6 +84,11 @@ class Settings(BaseSettings):
             raise ValueError(
                 "JWT_SECRET_KEY must be a strong unique secret in non-local environments"
             )
+
+        if self.AI_PROVIDER == "openai" and not self.openai_api_key:
+            raise ValueError("OPENAI_API_KEY is required when AI_PROVIDER=openai")
+        if self.AI_PROVIDER == "gemini" and not self.gemini_api_key:
+            raise ValueError("GEMINI_API_KEY is required when AI_PROVIDER=gemini")
         return self
 
 
