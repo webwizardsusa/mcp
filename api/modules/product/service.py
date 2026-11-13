@@ -2,11 +2,12 @@
 
 from math import ceil
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from models.product import Product
 from modules.product.schema import ProductListQuery, SortOption
+from services.product_advisor.filters import active_product_filters, text_search_filters
 
 
 class ProductService:
@@ -14,18 +15,10 @@ class ProductService:
         self.db = db
 
     def list_products(self, query: ProductListQuery) -> dict:
-        filters = [Product.is_active.is_(True)]
+        filters = active_product_filters()
 
         if query.q and query.q.strip():
-            term = f"%{query.q.strip()}%"
-            filters.append(
-                or_(
-                    Product.name.ilike(term),
-                    Product.brand.ilike(term),
-                    Product.category.ilike(term),
-                    Product.description.ilike(term),
-                )
-            )
+            filters.extend(text_search_filters(query.q))
 
         base = select(Product).where(*filters)
         total = self.db.scalar(

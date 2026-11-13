@@ -8,6 +8,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from models.product import Product
+from services.product_advisor.filters import active_product_filters, text_search_filters
 from services.product_advisor.serialize import (
     clamp_limit,
     parse_uuid,
@@ -31,20 +32,12 @@ class ProductAdvisorTools:
         limit: int | None = None,
     ) -> dict:
         """Search active products by text, brand, category, price, badge, or use case."""
-        filters = [Product.is_active.is_(True)]
+        filters = active_product_filters()
 
         if query and query.strip():
-            term = f"%{query.strip()}%"
-            filters.append(
-                or_(
-                    Product.name.ilike(term),
-                    Product.brand.ilike(term),
-                    Product.category.ilike(term),
-                    Product.description.ilike(term),
-                )
-            )
+            filters.extend(text_search_filters(query))
         if brand and brand.strip():
-            filters.append(Product.brand.ilike(brand.strip()))
+            filters.append(Product.brand.ilike(f"%{brand.strip()}%"))
         if category and category.strip():
             filters.append(Product.category.ilike(f"%{category.strip()}%"))
         if badge and badge.strip():

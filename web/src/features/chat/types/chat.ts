@@ -1,4 +1,4 @@
-export type ChatRole = 'user' | 'assistant';
+export type ChatRole = 'user' | 'assistant' | 'error';
 
 export type ChatMessage = {
   id: string;
@@ -6,9 +6,11 @@ export type ChatMessage = {
   text: string;
 };
 
+export type ChatHistoryRole = 'user' | 'assistant';
+
 export type ChatRequest = {
   message: string;
-  history: { role: ChatRole; content: string }[];
+  history: { role: ChatHistoryRole; content: string }[];
 };
 
 export type ChatResponse = {

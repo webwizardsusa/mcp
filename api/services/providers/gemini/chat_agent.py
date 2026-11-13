@@ -14,18 +14,11 @@ from google.genai.errors import ClientError, ServerError
 
 from core.config import settings
 from services.product_advisor.openai_bridge import OPENAI_TOOLS, dispatch_tool
+from services.product_advisor.prompt import MAX_TOOL_ROUNDS, SYSTEM_PROMPT
 from services.product_advisor.tools import ProductAdvisorTools
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_PROMPT = """You are AI Product Advisor for an automotive spare parts catalog.
-Prices are in USD. Use tools to look up real products before recommending.
-Be concise, helpful, and explain why a product fits (vehicle, budget, use case, rating).
-If tools return no products, say so and suggest a broader search.
-Never invent product ids, prices, or stock that tools did not return.
-When comparing, use clear bullet points."""
-
-MAX_TOOL_ROUNDS = 5
 # Transient capacity spikes are common on Gemini flash models.
 GENERATE_RETRIES = 3
 RETRY_BACKOFF_SECONDS = (0.8, 1.6, 3.2)
@@ -170,7 +163,7 @@ def run_chat(tools: ProductAdvisorTools, message: str, history: list[dict]) -> d
         for _ in range(MAX_TOOL_ROUNDS):
             response = _generate_with_retry(
                 client,
-                model=settings.GEMINI_CHAT_MODEL,
+                model=settings.chat_model,
                 contents=contents,
                 config=config,
             )
@@ -219,15 +212,13 @@ def run_chat(tools: ProductAdvisorTools, message: str, history: list[dict]) -> d
     except HTTPException:
         raise
     except Exception as exc:
-        logger.exception("Gemini chat failed")
+        logger.exception("Gemini chat failed: %s", exc)
         if _is_transient_capacity_error(exc):
             detail = (
-                "Gemini is busy right now (high demand). "
-                "Please try again in a moment, or set GEMINI_CHAT_MODEL to "
-                "gemini-3.1-flash-lite / gemini-flash-lite-latest."
+                "AI chat is busy right now. Please try again in a moment."
             )
         else:
-            detail = f"Gemini chat failed: {exc}"
+            detail = "AI chat is temporarily unavailable. Please try again shortly."
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=detail,

@@ -14,18 +14,10 @@ from services.product_advisor.openai_bridge import (
     dispatch_tool,
     parse_tool_arguments,
 )
+from services.product_advisor.prompt import MAX_TOOL_ROUNDS, SYSTEM_PROMPT
 from services.product_advisor.tools import ProductAdvisorTools
 
 logger = logging.getLogger(__name__)
-
-SYSTEM_PROMPT = """You are AI Product Advisor for an automotive spare parts catalog.
-Prices are in USD. Use tools to look up real products before recommending.
-Be concise, helpful, and explain why a product fits (vehicle, budget, use case, rating).
-If tools return no products, say so and suggest a broader search.
-Never invent product ids, prices, or stock that tools did not return.
-When comparing, use clear bullet points."""
-
-MAX_TOOL_ROUNDS = 5
 
 
 def run_chat(tools: ProductAdvisorTools, message: str, history: list[dict]) -> dict:
@@ -36,7 +28,7 @@ def run_chat(tools: ProductAdvisorTools, message: str, history: list[dict]) -> d
             detail="OPENAI_API_KEY is not configured",
         )
 
-    client = OpenAI(api_key=api_key)
+    client = OpenAI(api_key=api_key, timeout=60.0, max_retries=1)
     messages: list[dict] = [{"role": "system", "content": SYSTEM_PROMPT}]
 
     for item in history[-12:]:
@@ -52,7 +44,7 @@ def run_chat(tools: ProductAdvisorTools, message: str, history: list[dict]) -> d
     try:
         for _ in range(MAX_TOOL_ROUNDS):
             response = client.chat.completions.create(
-                model=settings.OPENAI_CHAT_MODEL,
+                model=settings.chat_model,
                 messages=messages,
                 tools=OPENAI_TOOLS,
                 tool_choice="auto",
@@ -108,10 +100,10 @@ def run_chat(tools: ProductAdvisorTools, message: str, history: list[dict]) -> d
     except HTTPException:
         raise
     except Exception as exc:
-        logger.exception("OpenAI chat failed")
+        logger.exception("OpenAI chat failed: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"OpenAI chat failed: {exc}",
+            detail="AI chat is temporarily unavailable. Please try again shortly.",
         ) from exc
 
     return {

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '@/app/store';
 import { useLogoutMutation } from '@/features/auth/api/authApi';
 import { logout, selectAuthUser } from '@/features/auth/slices/authSlice';
@@ -28,7 +29,7 @@ export const useProductUserMenu = () => {
     try {
       await logoutRequest().unwrap();
     } catch {
-      // clear local session even if API logout fails
+      toast.warning('Signed out locally. Server session clear failed — cookie may remain.');
     } finally {
       dispatch(logout());
       navigate('/auth/login', { replace: true });

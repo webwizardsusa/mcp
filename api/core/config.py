@@ -40,7 +40,8 @@ class Settings(BaseSettings):
 
     RATE_LIMIT_ENABLED: bool = True
     RATE_LIMIT_CHAT_PER_MINUTE: int = 20
-    # Optional. When set, chat limits use Redis; otherwise in-memory per process.
+    RATE_LIMIT_AUTH_PER_MINUTE: int = 20
+    # Required when APP_ENV != local (shared limits across workers). Optional in local.
     RATE_LIMIT_REDIS_URL: str | None = None
 
     model_config = SettingsConfigDict(
@@ -85,11 +86,24 @@ class Settings(BaseSettings):
                 "JWT_SECRET_KEY must be a strong unique secret in non-local environments"
             )
 
+        # AI keys / Redis readiness are validated at API startup (see main.py),
+        # not here — Alembic/migrate must boot with only DATABASE_URL + JWT settings.
+        return self
+
+    def require_ai_provider_key(self) -> None:
         if self.AI_PROVIDER == "openai" and not self.openai_api_key:
             raise ValueError("OPENAI_API_KEY is required when AI_PROVIDER=openai")
         if self.AI_PROVIDER == "gemini" and not self.gemini_api_key:
             raise ValueError("GEMINI_API_KEY is required when AI_PROVIDER=gemini")
-        return self
+
+    def require_rate_limit_backend(self) -> None:
+        if not self.RATE_LIMIT_ENABLED or self.APP_ENV == "local":
+            return
+        if not (self.RATE_LIMIT_REDIS_URL or "").strip():
+            raise ValueError(
+                "RATE_LIMIT_REDIS_URL is required when APP_ENV is not local "
+                "(multi-worker / shared rate limits)"
+            )
 
 
 @lru_cache

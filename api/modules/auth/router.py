@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException, Request, status
 from core.config import settings
 from core.cookies import clear_refresh_cookie, set_refresh_cookie
 from core.deps import CurrentUserDep, DbDep
+from core.rate_limit import AuthRateLimitDep
 from core.responses import success
 from modules.auth.schema import (
     AuthResponse,
@@ -34,7 +35,7 @@ def _resolve_refresh_token(
 
 
 @router.post("/login")
-def login(payload: LoginRequest, db: DbDep):
+def login(payload: LoginRequest, db: DbDep, _rate_limit: AuthRateLimitDep):
     result = AuthService(db).login(payload)
     response = success(message="Login successful", result=_auth_body(result))
     set_refresh_cookie(response, result["refresh_token"])
@@ -42,7 +43,13 @@ def login(payload: LoginRequest, db: DbDep):
 
 
 @router.post("/register")
-def register(payload: RegisterRequest, db: DbDep):
+def register(payload: RegisterRequest, db: DbDep, _rate_limit: AuthRateLimitDep):
+    # Product UI is login-only; keep register for local seeding/dev only.
+    if settings.APP_ENV != "local":
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Not found",
+        )
     result = AuthService(db).register(payload)
     response = success(message="Registration successful", result=_auth_body(result))
     set_refresh_cookie(response, result["refresh_token"])
@@ -53,6 +60,7 @@ def register(payload: RegisterRequest, db: DbDep):
 def refresh(
     request: Request,
     db: DbDep,
+    _rate_limit: AuthRateLimitDep,
     payload: RefreshRequest = RefreshRequest(),
 ):
     refresh_token = _resolve_refresh_token(request, payload)

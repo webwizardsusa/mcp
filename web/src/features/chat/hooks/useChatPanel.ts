@@ -1,11 +1,10 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 
 export const useChatPanel = () => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const open = useCallback(() => setIsOpen(true), []);
-  const close = useCallback(() => setIsOpen(false), []);
-  const toggle = useCallback(() => setIsOpen((prev) => !prev), []);
+  const open = () => setIsOpen(true);
+  const close = () => setIsOpen(false);
 
-  return { isOpen, open, close, toggle };
+  return { isOpen, open, close };
 };

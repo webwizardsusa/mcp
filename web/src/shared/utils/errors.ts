@@ -19,19 +19,3 @@ export const getErrorMessage = (err: unknown, fallback = 'Request failed'): stri
   }
   return fallback;
 };
-
-/** Read `{ message }` from a failed API Response body. */
-export const readResponseError = async (
-  response: Response,
-  fallback: string,
-): Promise<string> => {
-  try {
-    const body = (await response.json()) as { message?: string };
-    if (typeof body.message === 'string' && body.message.trim()) {
-      return body.message;
-    }
-  } catch {
-    // non-JSON body
-  }
-  return fallback;
-};

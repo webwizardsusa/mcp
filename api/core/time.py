@@ -1,4 +1,4 @@
-"""UTC datetime helpers used across auth, jobs, and workers."""
+"""UTC datetime helpers used across auth sessions."""
 
 from datetime import datetime, timezone
 

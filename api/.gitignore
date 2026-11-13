@@ -13,9 +13,6 @@ venv/
 .env.*
 !.env.example
 
-# Local storage
-uploads/
-
 # Test / coverage / tooling
 .pytest_cache/
 .coverage

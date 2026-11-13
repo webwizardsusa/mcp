@@ -2,13 +2,13 @@ import ChatFab from './ChatFab';
 import ChatPanel from './ChatPanel';
 import { useChatPanel } from '../hooks';
 
-/** Floating chat launcher + panel (UI only; no AI backend yet). */
+/** Floating product-advisor chat launcher + panel. */
 const ProductChatWidget = () => {
   const { isOpen, open, close } = useChatPanel();
 
   return (
     <>
-      {!isOpen ? <ChatFab onClick={open} /> : null}
+      {!isOpen ? <ChatFab onClick={open} showBadge={false} /> : null}
       <ChatPanel open={isOpen} onClose={close} />
     </>
   );

@@ -1,4 +1,3 @@
-import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router';
 import { useListProductsQuery } from '../api/productApi';
 import type { ProductSort } from '../types/product';
@@ -41,44 +40,31 @@ export const useProductList = () => {
     sort,
   });
 
-  const setQuery = useCallback(
-    (next: string) => {
-      const params = new URLSearchParams(searchParams);
-      const trimmed = next.trim();
-      if (trimmed) params.set('q', trimmed);
-      else params.delete('q');
-      params.set('page', '1');
-      setSearchParams(params, { replace: true });
-    },
-    [searchParams, setSearchParams],
-  );
+  const patchParams = (mutate: (params: URLSearchParams) => void) => {
+    const params = new URLSearchParams(searchParams);
+    mutate(params);
+    setSearchParams(params, { replace: true });
+  };
 
-  const setPage = useCallback(
-    (nextPage: number) => {
-      const params = new URLSearchParams(searchParams);
+  const setPage = (nextPage: number) => {
+    patchParams((params) => {
       params.set('page', String(Math.max(1, nextPage)));
-      setSearchParams(params, { replace: true });
-    },
-    [searchParams, setSearchParams],
-  );
+    });
+  };
 
-  const setSort = useCallback(
-    (nextSort: ProductSort) => {
-      const params = new URLSearchParams(searchParams);
+  const setSort = (nextSort: ProductSort) => {
+    patchParams((params) => {
       params.set('sort', nextSort);
       params.set('page', '1');
-      setSearchParams(params, { replace: true });
-    },
-    [searchParams, setSearchParams],
-  );
+    });
+  };
 
-  const rangeLabel = useMemo(() => {
-    const total = data?.total ?? 0;
-    if (!total) return 'Showing 0 products';
-    const from = (page - 1) * PAGE_SIZE + 1;
-    const to = Math.min(page * PAGE_SIZE, total);
-    return `Showing ${from} to ${to} of ${total.toLocaleString()} products`;
-  }, [data?.total, page]);
+  const total = data?.total ?? 0;
+  const from = total ? (page - 1) * PAGE_SIZE + 1 : 0;
+  const to = total ? Math.min(page * PAGE_SIZE, total) : 0;
+  const rangeLabel = total
+    ? `Showing ${from} to ${to} of ${total.toLocaleString()} products`
+    : 'Showing 0 products';
 
   return {
     q,
@@ -87,14 +73,13 @@ export const useProductList = () => {
     sortOptions: SORT_OPTIONS,
     pageSize: PAGE_SIZE,
     items: data?.items ?? [],
-    total: data?.total ?? 0,
+    total,
     totalPages: data?.total_pages ?? 0,
     rangeLabel,
     isLoading,
     isFetching,
     isError,
     refetch,
-    setQuery,
     setPage,
     setSort,
   };

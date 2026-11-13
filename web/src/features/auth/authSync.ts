@@ -1,9 +1,9 @@
 import type { Store } from '@reduxjs/toolkit';
-import { logout, setCredentials } from '@/features/auth/slices/authSlice';
+import { clearSession, setCredentials } from '@/features/auth/slices/authSlice';
 import type { LoginResponse } from '@/features/auth/types/auth';
 
-const CHANNEL_NAME = 'ai-document-auth';
-const REFRESH_LOCK_NAME = 'ai-document-auth-refresh';
+const CHANNEL_NAME = 'ai-product-advisor-auth';
+const REFRESH_LOCK_NAME = 'ai-product-advisor-auth-refresh';
 
 type AuthMessage =
   | { type: 'credentials'; payload: LoginResponse }
@@ -25,7 +25,8 @@ export const initAuthSync = (store: Store) => {
     if (message.type === 'logout') {
       applyingRemoteLogout = true;
       try {
-        store.dispatch(logout());
+        // Remote logout should not re-broadcast.
+        store.dispatch(clearSession());
       } finally {
         applyingRemoteLogout = false;
       }

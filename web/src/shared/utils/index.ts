@@ -1,1 +1,1 @@
-export { getErrorMessage, readResponseError } from './errors';
+export { getErrorMessage } from './errors';

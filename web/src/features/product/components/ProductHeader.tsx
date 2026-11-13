@@ -21,13 +21,13 @@ import {
 } from '@mui/icons-material';
 import { useSearchParams } from 'react-router';
 import { layoutConfig } from '@/app/providers';
-import { useListProductsQuery } from '@/features/product/api/productApi';
-import { useProductUserMenu } from '../hooks';
+import { useProductList, useProductUserMenu } from '../hooks';
 
 const ProductHeader = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const qFromUrl = searchParams.get('q') ?? '';
   const [searchValue, setSearchValue] = useState(qFromUrl);
+  const { total: totalProducts } = useProductList();
 
   const {
     user,
@@ -39,13 +39,6 @@ const ProductHeader = () => {
     closeMenu,
     onLogout,
   } = useProductUserMenu();
-
-  const { data } = useListProductsQuery({
-    page: 1,
-    page_size: 1,
-    sort: 'popular',
-  });
-  const totalProducts = data?.total ?? 0;
 
   useEffect(() => {
     setSearchValue(qFromUrl);
@@ -129,6 +122,7 @@ const ProductHeader = () => {
             },
           }}
           slotProps={{
+            htmlInput: { 'aria-label': 'Search products' },
             input: {
               startAdornment: (
                 <InputAdornment position="start">
@@ -152,7 +146,12 @@ const ProductHeader = () => {
         </Typography>
 
         <Box
+          component="button"
+          type="button"
           onClick={(e) => openMenu(e.currentTarget)}
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          aria-label="Account menu"
           sx={{
             display: 'flex',
             alignItems: 'center',
@@ -166,6 +165,8 @@ const ProductHeader = () => {
             borderColor: 'grey.200',
             flexShrink: 0,
             ml: { xs: 0, lg: 1 },
+            font: 'inherit',
+            color: 'inherit',
             '&:hover': { bgcolor: 'grey.200' },
           }}
         >

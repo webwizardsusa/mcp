@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSendChatMutation } from '../api/chatApi';
-import type { ChatMessage } from '../types/chat';
+import type { ChatHistoryRole, ChatMessage } from '../types/chat';
 import { getErrorMessage } from '@/shared/utils';
 
 const WELCOME: ChatMessage = {
@@ -27,8 +27,11 @@ export const useChatConversation = () => {
 
     const userMessage: ChatMessage = { id: nextId(), role: 'user', text };
     const history = [...messages, userMessage]
-      .filter((m) => m.id !== 'welcome')
-      .map((m) => ({ role: m.role, content: m.text }));
+      .filter((m) => m.id !== 'welcome' && (m.role === 'user' || m.role === 'assistant'))
+      .map((m) => ({
+        role: m.role as ChatHistoryRole,
+        content: m.text,
+      }));
 
     setMessages((prev) => [...prev, userMessage]);
     setDraft('');
@@ -48,15 +51,11 @@ export const useChatConversation = () => {
         ...prev,
         {
           id: nextId(),
-          role: 'assistant',
+          role: 'error',
           text: getErrorMessage(err, 'Chat failed. Please try again.'),
         },
       ]);
     }
-  };
-
-  const applySuggestion = (text: string) => {
-    setDraft(text);
   };
 
   return {
@@ -66,6 +65,5 @@ export const useChatConversation = () => {
     isLoading,
     hasUserMessage,
     send,
-    applySuggestion,
   };
 };

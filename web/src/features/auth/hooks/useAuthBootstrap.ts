@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/app/store';
 import { authApi } from '../api/authApi';
 import {
-  logout,
+  clearSession,
   selectAuthInitialized,
   setCredentials,
   setInitialized,
@@ -15,7 +15,9 @@ export const useAuthBootstrap = () => {
 
   useEffect(() => {
     let cancelled = false;
+    // One-time cleanup of pre-rename localStorage key.
     localStorage.removeItem('ai_document_auth');
+    localStorage.removeItem('ai_product_advisor_auth');
 
     const restore = async () => {
       try {
@@ -24,8 +26,9 @@ export const useAuthBootstrap = () => {
           dispatch(setCredentials(result));
         }
       } catch {
+        // No session / failed refresh — clear this tab only; do not force-logout others.
         if (!cancelled) {
-          dispatch(logout());
+          dispatch(clearSession());
         }
       } finally {
         if (!cancelled) {

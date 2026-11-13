@@ -14,9 +14,7 @@ import { logout, setCredentials } from '@/features/auth/slices/authSlice';
 import type { LoginResponse } from '@/features/auth/types/auth';
 
 export const API_TAGS = {
-  Auth: 'Auth',
   Product: 'Product',
-  Chat: 'Chat',
 } as const;
 
 type ApiEnvelope<T = unknown> = {
@@ -113,9 +111,7 @@ const refreshAccessToken: BaseQueryFn<
 };
 
 const isAuthBootstrapUrl = (url: string) =>
-  url.includes('/auth/login') ||
-  url.includes('/auth/refresh') ||
-  url.includes('/auth/register');
+  url.includes('/auth/login') || url.includes('/auth/refresh');
 
 const baseQueryWithEnvelope: BaseQueryFn<
   string | FetchArgs,

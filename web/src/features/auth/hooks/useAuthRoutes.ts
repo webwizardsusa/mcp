@@ -20,9 +20,11 @@ export const useProtectedRoute = () => {
 
   useMeQuery(undefined, { skip: !isAuthenticated });
 
+  const fromPath = `${location.pathname}${location.search}${location.hash}`;
+
   return {
     initialized,
     isAuthenticated,
-    fromPath: location.pathname,
+    fromPath,
   };
 };

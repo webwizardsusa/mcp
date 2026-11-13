@@ -38,6 +38,7 @@ const ChatComposer = ({ value, onChange, onSend, disabled = false }: Props) => {
         fullWidth
         multiline
         maxRows={3}
+        slotProps={{ htmlInput: { 'aria-label': 'Chat message' } }}
         disabled={disabled}
         sx={{
           '& .MuiOutlinedInput-root': {
